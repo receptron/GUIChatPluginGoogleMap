@@ -65,7 +65,7 @@ interface MapToolData {
 
 ## Google Maps API Setup
 
-This plugin requires a Google Maps API key with the **Maps Embed API** enabled.
+This plugin requires a Google Maps API key with several APIs enabled.
 
 ### Step 1: Create a Google Cloud Project
 
@@ -73,12 +73,20 @@ This plugin requires a Google Maps API key with the **Maps Embed API** enabled.
 2. Create a new project or select an existing one
 3. Make sure billing is enabled for the project
 
-### Step 2: Enable Maps Embed API
+### Step 2: Enable Required APIs
 
-1. Go to [APIs & Services > Library](https://console.cloud.google.com/apis/library)
-2. Search for "Maps Embed API"
-3. Click on **Maps Embed API**
-4. Click **Enable**
+This plugin requires the following 4 APIs. Enable all of them:
+
+| API | Purpose | Enable Link |
+|-----|---------|-------------|
+| **Maps JavaScript API** | Interactive map, markers, controls | [Enable](https://console.cloud.google.com/apis/library/maps-backend.googleapis.com) |
+| **Places API (New)** | Search locations by name | [Enable](https://console.cloud.google.com/apis/library/places-backend.googleapis.com) |
+| **Directions API** | Route calculation between points | [Enable](https://console.cloud.google.com/apis/library/directions-backend.googleapis.com) |
+| **Geocoding API** | Convert addresses to coordinates | [Enable](https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com) |
+
+> **Note**: You can use either "Places API" (legacy) or "Places API (New)".
+
+> **Troubleshooting**: If the map doesn't work, check [APIs & Services > Enabled APIs](https://console.cloud.google.com/apis/dashboard) to verify all 4 APIs are enabled. Also check if any API has quota limits or restrictions in its settings.
 
 ### Step 3: Create an API Key
 
@@ -87,7 +95,7 @@ This plugin requires a Google Maps API key with the **Maps Embed API** enabled.
 3. Copy the generated API key
 4. (Recommended) Click **Edit API key** to add restrictions:
    - **Application restrictions**: HTTP referrers (for web apps)
-   - **API restrictions**: Restrict to "Maps Embed API"
+   - **API restrictions**: Restrict to the 4 APIs above
 
 ### Step 4: Configure the Plugin
 
