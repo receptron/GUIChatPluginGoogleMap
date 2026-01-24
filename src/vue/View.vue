@@ -121,7 +121,7 @@
               :key="index"
               class="p-2 bg-gray-50 rounded text-sm"
             >
-              <div v-html="step.instruction" class="text-gray-800"></div>
+              <div class="text-gray-800">{{ stripHtml(step.instruction) }}</div>
               <div class="text-gray-500 mt-1">
                 {{ step.distance }} · {{ step.duration }}
               </div>
@@ -226,6 +226,11 @@ const formatLocation = (
   return `${location.lat}, ${location.lng}`;
 };
 
+const stripHtml = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent || "";
+};
+
 const getMarkersData = (): MarkerData[] => {
   const result: MarkerData[] = [];
   markers.value.forEach((marker, id) => {
@@ -270,7 +275,12 @@ const emitResult = (
 // Map initialization
 const loadGoogleMapsScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    if (typeof google !== "undefined" && google.maps) {
+    // Check if already fully loaded with importLibrary available
+    if (
+      typeof google !== "undefined" &&
+      google.maps &&
+      typeof google.maps.importLibrary === "function"
+    ) {
       resolve();
       return;
     }
@@ -278,19 +288,34 @@ const loadGoogleMapsScript = (): Promise<void> => {
     const existingScript = document.querySelector(
       'script[src*="maps.googleapis.com"]'
     );
+
+    const TIMEOUT_MS = 10000;
+    const POLL_INTERVAL_MS = 50;
+
+    const waitForImportLibrary = (startTime: number) => {
+      if (
+        typeof google !== "undefined" &&
+        google.maps &&
+        typeof google.maps.importLibrary === "function"
+      ) {
+        resolve();
+      } else if (Date.now() - startTime > TIMEOUT_MS) {
+        reject(new Error("Timeout waiting for Google Maps to load"));
+      } else {
+        setTimeout(() => waitForImportLibrary(startTime), POLL_INTERVAL_MS);
+      }
+    };
+
     if (existingScript) {
-      existingScript.addEventListener("load", () => resolve());
-      existingScript.addEventListener("error", () =>
-        reject(new Error("Failed to load Google Maps"))
-      );
+      waitForImportLibrary(Date.now());
       return;
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${props.googleMapKey}&libraries=places,marker&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${props.googleMapKey}&loading=async`;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    script.onload = () => waitForImportLibrary(Date.now());
     script.onerror = () => reject(new Error("Failed to load Google Maps"));
     document.head.appendChild(script);
   });
@@ -299,12 +324,19 @@ const loadGoogleMapsScript = (): Promise<void> => {
 const initializeMap = async () => {
   if (!mapContainer.value || !props.googleMapKey) return;
 
+  // Skip if map is already initialized
+  if (map.value) return;
+
   try {
     await loadGoogleMapsScript();
 
     // Load libraries dynamically
-    const markerLib = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
-    const placesLib = await google.maps.importLibrary("places") as google.maps.PlacesLibrary;
+    const markerLib = (await google.maps.importLibrary(
+      "marker"
+    )) as google.maps.MarkerLibrary;
+    const placesLib = (await google.maps.importLibrary(
+      "places"
+    )) as google.maps.PlacesLibrary;
     AdvancedMarkerElement = markerLib.AdvancedMarkerElement;
     Place = placesLib.Place;
 
@@ -315,7 +347,9 @@ const initializeMap = async () => {
       mapTypeControl: true,
       streetViewControl: true,
       fullscreenControl: true,
-      mapId: "DEMO_MAP_ID", // Required for AdvancedMarkerElement
+      // DEMO_MAP_ID is Google's demo ID. For production, create your own at:
+      // https://console.cloud.google.com/google/maps-apis/studio/maps
+      mapId: "DEMO_MAP_ID",
     });
 
     geocoder.value = new google.maps.Geocoder();
@@ -524,9 +558,13 @@ const searchPlaces = async (query?: string, placeType?: string) => {
     const { places: searchResults } = await Place.searchByText(request);
 
     if (searchResults && searchResults.length > 0) {
-      // Clear previous place markers
-      markers.value.forEach((marker, id) => {
-        if (id.startsWith("place_")) {
+      // Clear previous place markers (collect IDs first to avoid mutation during iteration)
+      const placeMarkerIds = [...markers.value.keys()].filter((id) =>
+        id.startsWith("place_")
+      );
+      placeMarkerIds.forEach((id) => {
+        const marker = markers.value.get(id);
+        if (marker) {
           marker.map = null;
           markers.value.delete(id);
         }
@@ -557,7 +595,8 @@ const searchPlaces = async (query?: string, placeType?: string) => {
             rating: place.rating ?? undefined,
             userRatingsTotal: place.userRatingCount ?? undefined,
             types: place.types,
-            openNow: place.regularOpeningHours?.periods ? true : undefined,
+            // Note: isOpen() requires async call, omitting for now
+            openNow: undefined,
           };
         }
       );
@@ -659,11 +698,18 @@ const zoomOut = () => {
   }
 };
 
+// Track last processed data to avoid re-processing
+let lastProcessedData: string | null = null;
+
 // Watch for result changes
 watch(
   () => props.selectedResult?.data,
   async (newData) => {
     if (newData && map.value) {
+      // Skip if same data was already processed
+      const dataKey = JSON.stringify(newData);
+      if (dataKey === lastProcessedData) return;
+      lastProcessedData = dataKey;
       await handleAction(newData);
     }
   }
