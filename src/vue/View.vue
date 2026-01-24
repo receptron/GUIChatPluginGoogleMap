@@ -119,7 +119,8 @@
             <div
               v-for="(step, index) in route.steps"
               :key="index"
-              class="p-2 bg-gray-50 rounded text-sm"
+              class="p-2 bg-gray-50 rounded text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+              @click="selectStep(step)"
             >
               <div class="text-gray-800">{{ stripHtml(step.instruction) }}</div>
               <div class="text-gray-500 mt-1">
@@ -143,6 +144,7 @@ import type {
   MarkerData,
   PlaceResult,
   DirectionRoute,
+  DirectionStep,
   LatLng,
 } from "../core/types";
 
@@ -653,12 +655,25 @@ const getDirections = async (
               duration: leg.duration?.text || "",
               startAddress: leg.start_address || "",
               endAddress: leg.end_address || "",
-              steps: leg.steps?.map((step: google.maps.DirectionsStep) => ({
-                instruction: step.instructions || "",
-                distance: step.distance?.text || "",
-                duration: step.duration?.text || "",
-                travelMode: step.travel_mode || "",
-              })) || [],
+              steps:
+                leg.steps?.map((step: google.maps.DirectionsStep) => ({
+                  instruction: step.instructions || "",
+                  distance: step.distance?.text || "",
+                  duration: step.duration?.text || "",
+                  travelMode: step.travel_mode || "",
+                  startLocation: step.start_location
+                    ? {
+                        lat: step.start_location.lat(),
+                        lng: step.start_location.lng(),
+                      }
+                    : undefined,
+                  endLocation: step.end_location
+                    ? {
+                        lat: step.end_location.lat(),
+                        lng: step.end_location.lng(),
+                      }
+                    : undefined,
+                })) || [],
               polyline: result.routes[0].overview_polyline || "",
             };
 
@@ -680,6 +695,15 @@ const selectPlace = (place: PlaceResult) => {
   if (!map.value) return;
   map.value.setCenter(place.location);
   map.value.setZoom(17);
+};
+
+const selectStep = (step: DirectionStep) => {
+  if (!map.value) return;
+  const location = step.startLocation || step.endLocation;
+  if (location) {
+    map.value.setCenter(location);
+    map.value.setZoom(18);
+  }
 };
 
 const zoomIn = () => {

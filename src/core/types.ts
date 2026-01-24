@@ -143,6 +143,8 @@ export interface DirectionStep {
   distance: string;
   duration: string;
   travelMode: string;
+  startLocation?: LatLng;
+  endLocation?: LatLng;
 }
 
 // Route information from Directions API
