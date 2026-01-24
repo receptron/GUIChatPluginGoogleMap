@@ -35,10 +35,11 @@
     <!-- View Component -->
     <div v-if="ViewComponent" class="bg-white rounded-lg p-5 mb-5 shadow-md">
       <h2 class="text-gray-600 text-xl mb-4">View Component</h2>
-      <div class="border border-gray-200 rounded p-4">
+      <div class="border border-gray-200 rounded h-96 overflow-hidden">
         <component
           :is="ViewComponent"
           :selectedResult="result"
+          :googleMapKey="googleMapKey"
           :sendTextMessage="handleSendTextMessage"
           @updateResult="handleUpdate"
         />
@@ -84,12 +85,13 @@ const PreviewComponent = computed(() => currentPlugin.previewComponent);
 const jsonInput = ref("");
 const jsonError = ref("");
 const lastSentMessage = ref("");
+const googleMapKey = import.meta.env.VITE_GOOGLE_MAP_KEY || "";
 
 const result = ref<ToolResult>({
   toolName: toolName.value,
   message: "Ready",
   title: "",
-  jsonData: undefined,
+  data: undefined,
 });
 
 // Actions
@@ -101,12 +103,12 @@ const loadSample = (sample: ToolSample) => {
 
 const applyJson = () => {
   try {
-    const data = JSON.parse(jsonInput.value);
+    const parsedData = JSON.parse(jsonInput.value);
     result.value = {
       toolName: toolName.value,
       message: "Data applied",
-      title: data.title || "",
-      jsonData: data,
+      title: parsedData.title || "",
+      data: parsedData,
     };
     jsonError.value = "";
     lastSentMessage.value = "";

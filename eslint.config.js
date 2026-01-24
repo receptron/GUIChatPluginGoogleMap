@@ -19,6 +19,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        google: "readonly",
       },
     },
     plugins: {
