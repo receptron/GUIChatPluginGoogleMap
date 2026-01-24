@@ -63,9 +63,39 @@ interface MapToolData {
 }
 ```
 
-## Configuration
+## Google Maps API Setup
 
-The plugin requires a Google Maps API key to display embedded maps. Pass it via the `googleMapKey` prop to the view component, or configure it in your app's start response.
+This plugin requires a Google Maps API key with the **Maps Embed API** enabled.
+
+### Step 1: Create a Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Make sure billing is enabled for the project
+
+### Step 2: Enable Maps Embed API
+
+1. Go to [APIs & Services > Library](https://console.cloud.google.com/apis/library)
+2. Search for "Maps Embed API"
+3. Click on **Maps Embed API**
+4. Click **Enable**
+
+### Step 3: Create an API Key
+
+1. Go to [APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials)
+2. Click **Create Credentials** > **API key**
+3. Copy the generated API key
+4. (Recommended) Click **Edit API key** to add restrictions:
+   - **Application restrictions**: HTTP referrers (for web apps)
+   - **API restrictions**: Restrict to "Maps Embed API"
+
+### Step 4: Configure the Plugin
+
+Pass the API key via the `googleMapKey` prop to the view component, or configure it in your app's environment variables / start response.
+
+```env
+GOOGLE_MAP_API_KEY=your_api_key_here
+```
 
 ## Development
 
