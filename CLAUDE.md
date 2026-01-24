@@ -39,6 +39,21 @@ interface MapToolData {
 - `src/vue/View.vue`: Main map display component
 - `src/vue/Preview.vue`: Sidebar preview component
 
+### TODO: Google Maps API Migration
+
+The following deprecated APIs need to be migrated:
+
+1. **PlacesService → Place class**
+   - `google.maps.places.PlacesService` is deprecated (March 2025)
+   - Migrate to `google.maps.places.Place`
+   - See: https://developers.google.com/maps/documentation/javascript/places-migration-overview
+
+2. **Marker → AdvancedMarkerElement**
+   - `google.maps.Marker` is deprecated (February 2024)
+   - Migrate to `google.maps.marker.AdvancedMarkerElement`
+   - Requires `marker` library in API URL
+   - See: https://developers.google.com/maps/documentation/javascript/advanced-markers/migration
+
 ## Updating This Document
 
 **IMPORTANT**: When making spec changes or improvements to this plugin through discussion with Claude:
