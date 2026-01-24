@@ -155,11 +155,14 @@ const props = defineProps<{
 // State
 const mapContainer = ref<HTMLDivElement | null>(null);
 const map = ref<google.maps.Map | null>(null);
-const markers = ref<Map<string, google.maps.Marker>>(new Map());
-const placesService = ref<google.maps.places.PlacesService | null>(null);
+const markers = ref<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
 const directionsService = ref<google.maps.DirectionsService | null>(null);
 const directionsRenderer = ref<google.maps.DirectionsRenderer | null>(null);
 const geocoder = ref<google.maps.Geocoder | null>(null);
+
+// Library references (loaded dynamically)
+let AdvancedMarkerElement: typeof google.maps.marker.AdvancedMarkerElement;
+let Place: typeof google.maps.places.Place;
 
 const isLoading = ref(false);
 const errorMessage = ref<string | null>(null);
@@ -226,16 +229,14 @@ const formatLocation = (
 const getMarkersData = (): MarkerData[] => {
   const result: MarkerData[] = [];
   markers.value.forEach((marker, id) => {
-    const position = marker.getPosition();
+    const position = marker.position;
     if (position) {
+      const lat = typeof position.lat === "function" ? position.lat() : position.lat;
+      const lng = typeof position.lng === "function" ? position.lng() : position.lng;
       result.push({
         id,
-        position: { lat: position.lat(), lng: position.lng() },
-        title: marker.getTitle() || undefined,
-        label:
-          typeof marker.getLabel() === "string"
-            ? marker.getLabel() as string
-            : (marker.getLabel() as google.maps.MarkerLabel | null)?.text,
+        position: { lat, lng },
+        title: marker.title || undefined,
       });
     }
   });
@@ -286,7 +287,7 @@ const loadGoogleMapsScript = (): Promise<void> => {
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${props.googleMapKey}&libraries=places&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${props.googleMapKey}&libraries=places,marker&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
@@ -301,6 +302,12 @@ const initializeMap = async () => {
   try {
     await loadGoogleMapsScript();
 
+    // Load libraries dynamically
+    const markerLib = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
+    const placesLib = await google.maps.importLibrary("places") as google.maps.PlacesLibrary;
+    AdvancedMarkerElement = markerLib.AdvancedMarkerElement;
+    Place = placesLib.Place;
+
     const defaultCenter = { lat: 35.6812, lng: 139.7671 }; // Tokyo Station
     map.value = new google.maps.Map(mapContainer.value, {
       center: defaultCenter,
@@ -308,10 +315,10 @@ const initializeMap = async () => {
       mapTypeControl: true,
       streetViewControl: true,
       fullscreenControl: true,
+      mapId: "DEMO_MAP_ID", // Required for AdvancedMarkerElement
     });
 
     geocoder.value = new google.maps.Geocoder();
-    placesService.value = new google.maps.places.PlacesService(map.value);
     directionsService.value = new google.maps.DirectionsService();
     directionsRenderer.value = new google.maps.DirectionsRenderer();
     directionsRenderer.value.setMap(map.value);
@@ -370,13 +377,22 @@ const addMapMarker = (
   id: string,
   title?: string,
   label?: string
-): google.maps.Marker => {
-  const marker = new google.maps.Marker({
+): google.maps.marker.AdvancedMarkerElement => {
+  // Create label element if needed
+  let content: HTMLElement | undefined;
+  if (label) {
+    const labelDiv = document.createElement("div");
+    labelDiv.className = "marker-label";
+    labelDiv.style.cssText = "background: #4285f4; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;";
+    labelDiv.textContent = label;
+    content = labelDiv;
+  }
+
+  const marker = new AdvancedMarkerElement({
     position,
     map: map.value,
     title,
-    label: label ? { text: label, color: "white" } : undefined,
-    animation: google.maps.Animation.DROP,
+    content,
   });
 
   markers.value.set(id, marker);
@@ -385,7 +401,7 @@ const addMapMarker = (
 
 const clearAllMarkers = () => {
   markers.value.forEach((marker) => {
-    marker.setMap(null);
+    marker.map = null;
   });
   markers.value.clear();
 };
@@ -484,87 +500,87 @@ const handleAction = async (data: MapToolData) => {
 };
 
 const searchPlaces = async (query?: string, placeType?: string) => {
-  if (!placesService.value || !map.value) return;
+  if (!map.value || !Place) return;
 
   const center = map.value.getCenter();
   if (!center) return;
 
-  const request: google.maps.places.TextSearchRequest = {
-    location: center,
-    radius: 5000,
-    query: query || placeType || "",
-  };
+  try {
+    // Use new Place.searchByText API
+    const request: google.maps.places.SearchByTextRequest = {
+      textQuery: query || placeType || "",
+      locationBias: {
+        center: { lat: center.lat(), lng: center.lng() },
+        radius: 5000,
+      },
+      fields: ["id", "displayName", "formattedAddress", "location", "rating", "userRatingCount", "types", "regularOpeningHours"],
+      maxResultCount: 10,
+    };
 
-  if (placeType && !query) {
-    (request as google.maps.places.TextSearchRequest & { type?: string }).type = placeType;
-  }
+    if (placeType && !query) {
+      request.includedType = placeType;
+    }
 
-  return new Promise<void>((resolve) => {
-    placesService.value!.textSearch(
-      request,
-      (
-        results: google.maps.places.PlaceResult[] | null,
-        status: google.maps.places.PlacesServiceStatus
-      ) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-          // Clear previous place markers
-          markers.value.forEach((marker, id) => {
-            if (id.startsWith("place_")) {
-              marker.setMap(null);
-              markers.value.delete(id);
-            }
-          });
+    const { places: searchResults } = await Place.searchByText(request);
 
-          const placeResults: PlaceResult[] = results.slice(0, 10).map(
-            (place: google.maps.places.PlaceResult, index: number) => {
-              const location = place.geometry?.location;
-              const coords: LatLng = location
-                ? { lat: location.lat(), lng: location.lng() }
-                : { lat: 0, lng: 0 };
+    if (searchResults && searchResults.length > 0) {
+      // Clear previous place markers
+      markers.value.forEach((marker, id) => {
+        if (id.startsWith("place_")) {
+          marker.map = null;
+          markers.value.delete(id);
+        }
+      });
 
-              // Add marker for each place
-              if (location) {
-                addMapMarker(
-                  coords,
-                  `place_${place.place_id}`,
-                  place.name,
-                  String(index + 1)
-                );
-              }
+      const placeResults: PlaceResult[] = searchResults.map(
+        (place: google.maps.places.Place, index: number) => {
+          const location = place.location;
+          const coords: LatLng = location
+            ? { lat: location.lat(), lng: location.lng() }
+            : { lat: 0, lng: 0 };
 
-              return {
-                placeId: place.place_id || "",
-                name: place.name || "",
-                address: place.formatted_address || "",
-                location: coords,
-                rating: place.rating,
-                userRatingsTotal: place.user_ratings_total,
-                types: place.types,
-                openNow: place.opening_hours?.isOpen?.(),
-              };
-            }
-          );
-
-          places.value = placeResults;
-          route.value = null;
-
-          // Fit bounds to show all markers
-          if (placeResults.length > 0) {
-            const bounds = new google.maps.LatLngBounds();
-            placeResults.forEach((p) => {
-              bounds.extend(p.location);
-            });
-            map.value?.fitBounds(bounds);
+          // Add marker for each place
+          if (location) {
+            addMapMarker(
+              coords,
+              `place_${place.id}`,
+              place.displayName || undefined,
+              String(index + 1)
+            );
           }
 
-          emitResult(true, undefined, { places: placeResults });
-        } else {
-          emitResult(false, "No places found");
+          return {
+            placeId: place.id || "",
+            name: place.displayName || "",
+            address: place.formattedAddress || "",
+            location: coords,
+            rating: place.rating ?? undefined,
+            userRatingsTotal: place.userRatingCount ?? undefined,
+            types: place.types,
+            openNow: place.regularOpeningHours?.periods ? true : undefined,
+          };
         }
-        resolve();
+      );
+
+      places.value = placeResults;
+      route.value = null;
+
+      // Fit bounds to show all markers
+      if (placeResults.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        placeResults.forEach((p) => {
+          bounds.extend(p.location);
+        });
+        map.value?.fitBounds(bounds);
       }
-    );
-  });
+
+      emitResult(true, undefined, { places: placeResults });
+    } else {
+      emitResult(false, "No places found");
+    }
+  } catch {
+    emitResult(false, "No places found");
+  }
 };
 
 const getDirections = async (
