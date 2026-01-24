@@ -39,6 +39,17 @@ interface MapToolData {
 - `src/vue/View.vue`: Main map display component
 - `src/vue/Preview.vue`: Sidebar preview component
 
+### Google Maps API Usage
+
+This plugin uses modern Google Maps JavaScript API:
+
+- **AdvancedMarkerElement**: For map markers (requires `marker` library and `mapId`)
+- **Place.searchByText**: For place search functionality (new Places API)
+- **Geocoder**: For address-to-coordinates conversion
+- **DirectionsService**: For route calculation
+
+Libraries loaded: `places,marker` with `loading=async`
+
 ## Updating This Document
 
 **IMPORTANT**: When making spec changes or improvements to this plugin through discussion with Claude:
