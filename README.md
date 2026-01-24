@@ -1,6 +1,6 @@
-# @gui-chat-plugin/map
+# @gui-chat-plugin/google-map
 
-[![npm version](https://badge.fury.io/js/%40gui-chat-plugin%2Fmap.svg)](https://www.npmjs.com/package/@gui-chat-plugin/map)
+[![npm version](https://badge.fury.io/js/%40gui-chat-plugin%2Fgoogle-map.svg)](https://www.npmjs.com/package/@gui-chat-plugin/google-map)
 
 Google Map location plugin for GUI Chat applications. Display locations on an interactive map.
 
@@ -14,7 +14,7 @@ Google Map location plugin for GUI Chat applications. Display locations on an in
 ## Installation
 
 ```bash
-yarn add @gui-chat-plugin/map
+yarn add @gui-chat-plugin/google-map
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ yarn add @gui-chat-plugin/map
 
 ```typescript
 // In src/tools/index.ts
-import MapPlugin from "@gui-chat-plugin/map/vue";
+import MapPlugin from "@gui-chat-plugin/google-map/vue";
 
 const pluginList = [
   // ... other plugins
@@ -31,13 +31,13 @@ const pluginList = [
 ];
 
 // In src/main.ts
-import "@gui-chat-plugin/map/style.css";
+import "@gui-chat-plugin/google-map/style.css";
 ```
 
 ### Core-only Usage
 
 ```typescript
-import { executeMap, TOOL_DEFINITION } from "@gui-chat-plugin/map";
+import { executeMap, TOOL_DEFINITION } from "@gui-chat-plugin/google-map";
 
 // Show a location
 const result = await executeMap(context, {
