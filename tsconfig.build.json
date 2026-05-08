@@ -7,7 +7,7 @@
     "emitDeclarationOnly": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["@types/google.maps"]
+    "types": ["google.maps"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
   "exclude": ["src/**/*.test.ts", "src/demo/**"]
