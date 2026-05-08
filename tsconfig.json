@@ -19,7 +19,8 @@
     "declarationMap": true,
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["google.maps"]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
 }

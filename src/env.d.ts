@@ -1,3 +1,3 @@
 declare module "*.css";
 
-/// <reference types="@types/google.maps" />
+/// <reference types="google.maps" />
