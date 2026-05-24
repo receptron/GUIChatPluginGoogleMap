@@ -393,10 +393,7 @@ const geocodeLocation = async (
   return new Promise((resolve) => {
     geocoder.value!.geocode(
       { address: location },
-      (
-        results: google.maps.GeocoderResult[] | null,
-        status: google.maps.GeocoderStatus
-      ) => {
+      (results, status) => {
         if (status === "OK" && results && results[0]) {
           const loc = results[0].geometry.location;
           resolve({ lat: loc.lat(), lng: loc.lng() });
@@ -640,11 +637,8 @@ const getDirections = async (
   return new Promise<void>((resolve) => {
     directionsService.value!.route(
       request,
-      (
-        result: google.maps.DirectionsResult | null,
-        status: google.maps.DirectionsStatus
-      ) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
+      (result, status) => {
+        if (status === "OK" && result) {
           directionsRenderer.value!.setDirections(result);
 
           const leg = result.routes[0]?.legs[0];
