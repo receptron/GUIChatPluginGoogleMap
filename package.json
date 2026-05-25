@@ -1,6 +1,6 @@
 {
   "name": "@gui-chat-plugin/google-map",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "description": "Google Map location plugin for GUI Chat applications",
   "author": "receptron",
