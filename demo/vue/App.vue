@@ -21,7 +21,7 @@
             </span>
           </div>
           <button
-            @click="clearMessages"
+            @click="clearAll"
             class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
           >
             Clear Chat
@@ -112,6 +112,31 @@
             </div>
           </div>
 
+          <!-- Grouped Maps (groupId) — one merged card per groupId.
+               Try the "Trip A ①→④" samples in order: markers + a
+               route accumulate here on ONE map. "Trip B" makes a
+               separate card. -->
+          <div
+            v-for="group in groups"
+            :key="group.groupId"
+            v-show="ViewComponent"
+            class="bg-white rounded-lg shadow-md overflow-hidden"
+          >
+            <div class="p-3 border-b border-gray-200 flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-gray-700">Map: {{ group.groupId }}</h2>
+              <span class="text-xs text-gray-500">{{ group.results.length }} operation(s)</span>
+            </div>
+            <div class="h-96">
+              <component
+                :is="ViewComponent"
+                :results="group.results"
+                :selectedResult="group.results[group.results.length - 1]"
+                :googleMapKey="googleMapKey"
+                :sendTextMessage="handleSendTextMessage"
+              />
+            </div>
+          </div>
+
           <!-- Preview Component -->
           <div v-if="PreviewComponent && result" class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="p-3 border-b border-gray-200">
@@ -163,9 +188,27 @@ import { ref, computed, nextTick, watch } from "vue";
 import { plugin } from "../../src/vue";
 import { useChat } from "./useChat";
 import type { ToolPlugin, ToolSample, ToolResult } from "gui-chat-protocol/vue";
+import type { MapToolData } from "../../src/core/types";
 
 // Plugin configuration
 const currentPlugin = plugin as unknown as ToolPlugin;
+
+// Grouped maps: results carrying the same `groupId` accumulate into
+// ONE card (markers layer, route overlays) via the View's `results`
+// replay prop. This mirrors what a host (e.g. MulmoClaude) does to
+// merge same-groupId map operations onto one map surface.
+const groups = ref<{ groupId: string; results: ToolResult[] }[]>([]);
+
+const routeToGroup = (toolResult: ToolResult): void => {
+  const groupId = (toolResult.data as MapToolData | undefined)?.groupId;
+  if (!groupId) return;
+  const existing = groups.value.find((g) => g.groupId === groupId);
+  if (existing) {
+    existing.results = [...existing.results, toolResult];
+  } else {
+    groups.value.push({ groupId, results: [toolResult] });
+  }
+};
 
 // Google Map API Key
 const googleMapKey = import.meta.env.VITE_GOOGLE_MAP_KEY || "";
@@ -235,9 +278,17 @@ const handleUpdateResult = (updated: ToolResult) => {
   console.log("Result updated:", updated);
 };
 
+const clearAll = () => {
+  clearMessages();
+  groups.value = [];
+};
+
 const executeSample = async (sample: ToolSample) => {
   const toolResult = await executePlugin(sample.args);
   result.value = toolResult;
+  // Route into the grouped-maps section when the sample carries a
+  // groupId (same id → same card accumulates).
+  routeToGroup(toolResult);
 
   // Add messages in correct order for OpenAI API
   const toolCallId = `sample_${Date.now()}`;
