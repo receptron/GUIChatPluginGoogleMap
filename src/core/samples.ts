@@ -109,7 +109,7 @@ export const samples: ToolSample[] = [
       action: "getDirections",
       origin: "Tokyo Station",
       destination: "Shibuya Station",
-      travelMode: "TRANSIT",
+      travelMode: "DRIVING",
     },
   },
   {

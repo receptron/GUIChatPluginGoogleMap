@@ -146,6 +146,7 @@ import type {
   DirectionRoute,
   DirectionStep,
   LatLng,
+  TravelMode,
 } from "../core/types";
 
 const props = defineProps<{
@@ -621,68 +622,79 @@ const searchPlaces = async (query?: string, placeType?: string) => {
   }
 };
 
+const toLatLng = (point?: google.maps.LatLng): LatLng | undefined =>
+  point ? { lat: point.lat(), lng: point.lng() } : undefined;
+
+const mapDirectionStep = (step: google.maps.DirectionsStep): DirectionStep => ({
+  instruction: step.instructions || "",
+  distance: step.distance?.text || "",
+  duration: step.duration?.text || "",
+  travelMode: step.travel_mode || "",
+  startLocation: toLatLng(step.start_location),
+  endLocation: toLatLng(step.end_location),
+});
+
+const buildRouteInfo = (
+  result: google.maps.DirectionsResult
+): DirectionRoute | null => {
+  const firstRoute = result.routes[0];
+  const leg = firstRoute?.legs[0];
+  if (!firstRoute || !leg) return null;
+  return {
+    summary: firstRoute.summary || "",
+    distance: leg.distance?.text || "",
+    duration: leg.duration?.text || "",
+    startAddress: leg.start_address || "",
+    endAddress: leg.end_address || "",
+    steps: leg.steps?.map(mapDirectionStep) || [],
+    polyline: firstRoute.overview_polyline || "",
+  };
+};
+
+const errorStatusCode = (err: unknown): string | null => {
+  if (err instanceof Error && "code" in err) {
+    const { code } = err;
+    return typeof code === "string" ? code : null;
+  }
+  return null;
+};
+
+// The Directions API never returns transit routes inside Japan (licensing),
+// so a TRANSIT request there always rejects with ZERO_RESULTS.
+const directionsErrorMessage = (err: unknown, travelMode: TravelMode): string => {
+  if (errorStatusCode(err) === "ZERO_RESULTS") {
+    return travelMode === "TRANSIT"
+      ? "No transit route found. The Google Directions API does not provide transit directions within Japan."
+      : "No route found between these locations.";
+  }
+  return err instanceof Error ? err.message : "Could not find directions";
+};
+
 const getDirections = async (
   origin: string,
   destination: string,
-  travelMode: string
+  travelMode: TravelMode
 ) => {
   if (!directionsService.value || !directionsRenderer.value) return;
 
   const request: google.maps.DirectionsRequest = {
     origin,
     destination,
-    travelMode: travelMode as google.maps.TravelMode,
+    travelMode,
   };
 
-  return new Promise<void>((resolve) => {
-    directionsService.value!.route(
-      request,
-      (result, status) => {
-        if (status === "OK" && result) {
-          directionsRenderer.value!.setDirections(result);
+  try {
+    const result = await directionsService.value.route(request);
+    const routeInfo = buildRouteInfo(result);
+    if (!routeInfo) throw new Error("No route found between these locations.");
 
-          const leg = result.routes[0]?.legs[0];
-          if (leg) {
-            const routeInfo: DirectionRoute = {
-              summary: result.routes[0].summary || "",
-              distance: leg.distance?.text || "",
-              duration: leg.duration?.text || "",
-              startAddress: leg.start_address || "",
-              endAddress: leg.end_address || "",
-              steps:
-                leg.steps?.map((step: google.maps.DirectionsStep) => ({
-                  instruction: step.instructions || "",
-                  distance: step.distance?.text || "",
-                  duration: step.duration?.text || "",
-                  travelMode: step.travel_mode || "",
-                  startLocation: step.start_location
-                    ? {
-                        lat: step.start_location.lat(),
-                        lng: step.start_location.lng(),
-                      }
-                    : undefined,
-                  endLocation: step.end_location
-                    ? {
-                        lat: step.end_location.lat(),
-                        lng: step.end_location.lng(),
-                      }
-                    : undefined,
-                })) || [],
-              polyline: result.routes[0].overview_polyline || "",
-            };
-
-            route.value = routeInfo;
-            places.value = [];
-
-            emitResult(true, undefined, { route: routeInfo });
-          }
-        } else {
-          emitResult(false, "Could not find directions");
-        }
-        resolve();
-      }
-    );
-  });
+    directionsRenderer.value.setDirections(result);
+    route.value = routeInfo;
+    places.value = [];
+    emitResult(true, undefined, { route: routeInfo });
+  } catch (err) {
+    throw new Error(directionsErrorMessage(err, travelMode), { cause: err });
+  }
 };
 
 const selectPlace = (place: PlaceResult) => {
