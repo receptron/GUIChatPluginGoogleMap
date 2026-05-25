@@ -36,6 +36,10 @@ export const executeMapControl = async (
   args: MapArgs
 ): Promise<ToolResult<MapToolData, MapJsonData>> => {
   const action: MapAction = args.action || DEFAULT_ACTION;
+  // Threaded onto every returned data shape so the host can group
+  // results onto one map. Undefined stays undefined (ungrouped /
+  // legacy single-result behaviour).
+  const groupId = args.groupId;
 
   switch (action) {
     case "showLocation":
@@ -47,7 +51,7 @@ export const executeMapControl = async (
         );
       }
       const location = getLocationFromArgs(args);
-      const data: MapToolData = { action, location };
+      const data: MapToolData = { action, location, groupId };
 
       if (action === "addMarker") {
         data.marker = {
@@ -82,14 +86,14 @@ export const executeMapControl = async (
       }
       return {
         message: `Setting zoom level to ${zoom}`,
-        data: { action, zoom },
+        data: { action, zoom, groupId },
       };
     }
 
     case "clearMarkers": {
       return {
         message: "Clearing all markers from the map",
-        data: { action },
+        data: { action, groupId },
       };
     }
 
@@ -108,6 +112,7 @@ export const executeMapControl = async (
           action,
           searchQuery: args.searchQuery,
           placeType: args.placeType,
+          groupId,
         },
       };
     }
@@ -126,6 +131,7 @@ export const executeMapControl = async (
           origin: args.origin,
           destination: args.destination,
           travelMode,
+          groupId,
         },
       };
     }
@@ -196,13 +202,36 @@ mapControl(action: "getDirections", origin: "Tokyo Station", destination: "Tokyo
 \`\`\`
 Travel modes: DRIVING, WALKING, BICYCLING, TRANSIT
 
+## Grouping operations onto one map (groupId)
+
+By default each call renders its own map. To build ONE map from
+several calls — e.g. show a city, drop several markers, then draw a
+route — pass the SAME \`groupId\` on every related call. Markers
+accumulate, directions overlay, and the center follows the latest
+call, all on a single shared map.
+
+\`\`\`
+mapControl(action: "findPlaces", searchQuery: "ramen", location: "Shibuya", groupId: "tokyo-food-trip")
+mapControl(action: "addMarker", location: "Ichiran Shibuya", groupId: "tokyo-food-trip")
+mapControl(action: "getDirections", origin: "Shibuya Station", destination: "Ichiran Shibuya", travelMode: "WALKING", groupId: "tokyo-food-trip")
+\`\`\`
+
+To update that same map later (move a marker, change the route),
+reuse the same \`groupId\`. To start a separate, unrelated map, use a
+NEW \`groupId\`. Omit \`groupId\` for a one-off standalone map.
+
+Pick a short, descriptive, stable id per logical map (e.g.
+"tokyo-food-trip", "office-commute"). Reusing one id across
+unrelated topics will pile unrelated markers onto one map.
+
 ## Response Data
 
 The map will return JSON data with the results of each action, including:
 - Current center coordinates and zoom level
 - Markers on the map
 - Place search results with ratings and addresses
-- Route information with distance and duration`;
+- Route information with distance and duration
+- The \`groupId\` this result belongs to (echoed back)`;
 
 export const pluginCore: ToolPluginCore<MapToolData, MapJsonData, MapArgs> = {
   toolDefinition: TOOL_DEFINITION,

@@ -130,4 +130,56 @@ export const samples: ToolSample[] = [
       travelMode: "DRIVING",
     },
   },
+
+  // groupId samples — click "Trip A ①→④" in order to watch markers
+  // and a route accumulate onto ONE map (they share groupId
+  // "tokyo-food-trip"). "Trip B" uses a different groupId, so in the
+  // grouped-maps demo it renders as a separate card instead of
+  // piling onto the first map.
+  {
+    name: "Trip A ①: center Shibuya",
+    args: {
+      action: "showLocation",
+      location: "Shibuya, Tokyo",
+      groupId: "tokyo-food-trip",
+    },
+  },
+  {
+    name: "Trip A ②: + marker Ichiran",
+    args: {
+      action: "addMarker",
+      location: "Ichiran Shibuya",
+      markerTitle: "Ichiran",
+      markerLabel: "I",
+      groupId: "tokyo-food-trip",
+    },
+  },
+  {
+    name: "Trip A ③: + marker Hachiko",
+    args: {
+      action: "addMarker",
+      location: "Hachiko Statue, Shibuya",
+      markerTitle: "Hachiko",
+      markerLabel: "H",
+      groupId: "tokyo-food-trip",
+    },
+  },
+  {
+    name: "Trip A ④: + walking route",
+    args: {
+      action: "getDirections",
+      origin: "Shibuya Station",
+      destination: "Ichiran Shibuya",
+      travelMode: "WALKING",
+      groupId: "tokyo-food-trip",
+    },
+  },
+  {
+    name: "Trip B: Paris (separate map)",
+    args: {
+      action: "showLocation",
+      location: "Eiffel Tower, Paris",
+      groupId: "paris-day",
+    },
+  },
 ];

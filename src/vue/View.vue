@@ -151,6 +151,13 @@ import type {
 
 const props = defineProps<{
   selectedResult: ToolResult<MapToolData> | null;
+  // Optional ordered group of results sharing one `groupId`. When the
+  // host provides this, the View replays the whole sequence onto a
+  // single map (markers accumulate, directions overlay, center
+  // follows the latest) and reconstructs that state on remount. When
+  // omitted, the View falls back to the single `selectedResult`
+  // (legacy one-result-per-map behaviour).
+  results?: ToolResult<MapToolData>[] | null;
   googleMapKey?: string | null;
   onUpdateResult?: (jsonData: MapJsonData) => void;
 }>();
@@ -174,9 +181,22 @@ const route = ref<DirectionRoute | null>(null);
 const currentCenter = ref<LatLng | null>(null);
 const currentZoom = ref(15);
 
+// True when the host drives the View with a result group.
+const isGroupMode = (): boolean => Array.isArray(props.results);
+
+// The "current" tool data the header / emit reflect: in group mode
+// it's the last result of the group; otherwise the single result.
+const latestData = computed<MapToolData | undefined>(() => {
+  if (isGroupMode()) {
+    const seq = props.results ?? [];
+    return seq[seq.length - 1]?.data ?? undefined;
+  }
+  return props.selectedResult?.data ?? undefined;
+});
+
 // Computed
 const headerTitle = computed(() => {
-  const action = props.selectedResult?.data?.action;
+  const action = latestData.value?.action;
   const titles: Record<string, string> = {
     showLocation: "Map Location",
     setCenter: "Map View",
@@ -190,7 +210,7 @@ const headerTitle = computed(() => {
 });
 
 const headerSubtitle = computed(() => {
-  const data = props.selectedResult?.data;
+  const data = latestData.value;
   if (!data) return "";
 
   switch (data.action) {
@@ -214,7 +234,7 @@ const showSidePanel = computed(() => {
 });
 
 const fallbackUrl = computed(() => {
-  const data = props.selectedResult?.data;
+  const data = latestData.value;
   if (!data?.location) return "";
   const loc = formatLocation(data.location);
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
@@ -258,10 +278,11 @@ const emitResult = (
 ) => {
   if (!props.onUpdateResult) return;
 
-  const data = props.selectedResult?.data;
+  const data = latestData.value;
   const jsonData: MapJsonData = {
     action: data?.action || "showLocation",
     success,
+    groupId: data?.groupId,
     center: currentCenter.value || undefined,
     zoom: currentZoom.value,
     markers: getMarkersData(),
@@ -371,8 +392,13 @@ const initializeMap = async () => {
       currentZoom.value = map.value?.getZoom() || 15;
     });
 
-    // Process initial action if data exists
-    if (props.selectedResult?.data) {
+    // Process initial action(s). In group mode replay the whole
+    // sequence so a remounted card reconstructs the accumulated map;
+    // otherwise apply the single result.
+    if (isGroupMode()) {
+      await syncGroupSequence();
+    } else if (props.selectedResult?.data) {
+      lastProcessedData = JSON.stringify(props.selectedResult.data);
       await handleAction(props.selectedResult.data);
     }
   } catch (err) {
@@ -728,20 +754,54 @@ const zoomOut = () => {
   }
 };
 
-// Track last processed data to avoid re-processing
+// ── Legacy single-result mode ──────────────────────────────────
+// Track last processed data to avoid re-processing the same action.
 let lastProcessedData: string | null = null;
 
-// Watch for result changes
 watch(
   () => props.selectedResult?.data,
   async (newData) => {
+    if (isGroupMode()) return; // group mode is driven by the watcher below
     if (newData && map.value) {
-      // Skip if same data was already processed
       const dataKey = JSON.stringify(newData);
       if (dataKey === lastProcessedData) return;
       lastProcessedData = dataKey;
       await handleAction(newData);
     }
+  }
+);
+
+// ── Group replay mode ──────────────────────────────────────────
+// How many of the current group's results have been applied, and
+// which group they belong to. The group is normally append-only, so
+// new results are applied incrementally; if the group identity
+// changes or the list shrinks (a different/rebuilt group), the map
+// is reset and the whole sequence replayed.
+let appliedCount = 0;
+let appliedGroupKey: string | null | undefined;
+
+const syncGroupSequence = async (): Promise<void> => {
+  if (!map.value || !props.results) return;
+  const seq = props.results;
+  const seqGroup = seq[0]?.data?.groupId ?? null;
+  if (seqGroup !== appliedGroupKey || seq.length < appliedCount) {
+    clearAllMarkers();
+    route.value = null;
+    places.value = [];
+    appliedCount = 0;
+    appliedGroupKey = seqGroup;
+  }
+  for (let i = appliedCount; i < seq.length; i++) {
+    const data = seq[i]?.data;
+    if (data) await handleAction(data); // sequential — geocode/route order matters
+  }
+  appliedCount = seq.length;
+};
+
+watch(
+  () => (props.results ?? []).map((r) => JSON.stringify(r.data)).join(""),
+  async () => {
+    if (isGroupMode() && map.value) await syncGroupSequence();
   }
 );
 

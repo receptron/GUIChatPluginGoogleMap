@@ -158,6 +158,15 @@ export interface DirectionRoute {
   polyline: string;
 }
 
+// `groupId` (shared by the three shapes below) groups related map
+// operations onto ONE map: results carrying the same `groupId`
+// accumulate (markers layer, directions overlay, center follows the
+// latest) instead of each spawning a separate map; a new `groupId`
+// starts a fresh map. The host groups results by this key and
+// replays a group in order onto a single View. Undefined =
+// ungrouped (legacy single-result map). NOT to be confused with
+// Google Maps' own `mapId` (cloud styling id).
+
 // Tool data returned from execute function
 export interface MapToolData {
   action: MapAction;
@@ -169,6 +178,7 @@ export interface MapToolData {
   origin?: string | LatLng;
   destination?: string | LatLng;
   travelMode?: TravelMode;
+  groupId?: string;
 }
 
 // JSON data returned from View component to LLM
@@ -181,6 +191,7 @@ export interface MapJsonData {
   places?: PlaceResult[];
   route?: DirectionRoute;
   error?: string;
+  groupId?: string;
 }
 
 // Arguments passed to the tool
@@ -197,4 +208,5 @@ export interface MapArgs {
   travelMode?: TravelMode;
   markerTitle?: string;
   markerLabel?: string;
+  groupId?: string;
 }

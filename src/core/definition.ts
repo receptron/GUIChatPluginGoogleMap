@@ -185,6 +185,11 @@ Available actions:
         description:
           "Single character label displayed on the marker when using addMarker.",
       },
+      groupId: {
+        type: "string",
+        description:
+          "Optional grouping key. Reuse the SAME groupId across calls that should appear on ONE shared map — e.g. searching places then drawing a route for the same trip, or later updating that map. Markers accumulate, directions overlay, and the center follows the latest call. Use a NEW groupId to start a separate, unrelated map. Omit for a one-off standalone map. (Unrelated to Google Maps' own map style id.)",
+      },
     },
     required: [],
   },
