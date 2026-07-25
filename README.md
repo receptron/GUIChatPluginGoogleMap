@@ -14,8 +14,11 @@ Google Map location plugin for GUI Chat applications. Display locations on an in
 ## Installation
 
 ```bash
-yarn add @gui-chat-plugin/google-map
+yarn add @gui-chat-plugin/google-map gui-chat-protocol
 ```
+
+> `gui-chat-protocol` is a peer dependency — install it alongside the plugin; the host application provides the runtime and this plugin only declares the compatible range.
+
 
 ## Usage
 
