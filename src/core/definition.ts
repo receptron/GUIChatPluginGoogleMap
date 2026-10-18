@@ -18,44 +18,30 @@ Available actions:
     properties: {
       action: {
         type: "string",
-        enum: [
-          "showLocation",
-          "setCenter",
-          "setZoom",
-          "addMarker",
-          "clearMarkers",
-          "findPlaces",
-          "getDirections",
-        ],
-        description:
-          "The action to perform. Defaults to 'showLocation' if not specified.",
+        enum: ["showLocation", "setCenter", "setZoom", "addMarker", "clearMarkers", "findPlaces", "getDirections"],
+        description: "The action to perform. Defaults to 'showLocation' if not specified.",
       },
       location: {
         type: "string",
-        description:
-          "Location name, address, or place (e.g., 'Tokyo Station', 'Paris, France'). Used with showLocation, setCenter, addMarker actions.",
+        description: "Location name, address, or place (e.g., 'Tokyo Station', 'Paris, France'). Used with showLocation, setCenter, addMarker actions.",
       },
       lat: {
         type: "number",
-        description:
-          "Latitude coordinate. Can be used instead of location for precise positioning.",
+        description: "Latitude coordinate. Can be used instead of location for precise positioning.",
       },
       lng: {
         type: "number",
-        description:
-          "Longitude coordinate. Can be used instead of location for precise positioning.",
+        description: "Longitude coordinate. Can be used instead of location for precise positioning.",
       },
       zoom: {
         type: "integer",
         minimum: 1,
         maximum: 21,
-        description:
-          "Zoom level for setZoom action (1=world, 15=streets, 21=buildings). Default is 15.",
+        description: "Zoom level for setZoom action (1=world, 15=streets, 21=buildings). Default is 15.",
       },
       searchQuery: {
         type: "string",
-        description:
-          "Text search query for findPlaces action (e.g., 'ramen', 'coffee shop').",
+        description: "Text search query for findPlaces action (e.g., 'ramen', 'coffee shop').",
       },
       placeType: {
         type: "string",
@@ -157,24 +143,20 @@ Available actions:
           "veterinary_care",
           "zoo",
         ],
-        description:
-          "Type of place to search for with findPlaces action. Use with or instead of searchQuery.",
+        description: "Type of place to search for with findPlaces action. Use with or instead of searchQuery.",
       },
       origin: {
         type: "string",
-        description:
-          "Starting point for getDirections action. Can be a place name or address.",
+        description: "Starting point for getDirections action. Can be a place name or address.",
       },
       destination: {
         type: "string",
-        description:
-          "End point for getDirections action. Can be a place name or address.",
+        description: "End point for getDirections action. Can be a place name or address.",
       },
       travelMode: {
         type: "string",
         enum: ["DRIVING", "WALKING", "BICYCLING", "TRANSIT"],
-        description:
-          "Travel mode for getDirections action. Defaults to DRIVING.",
+        description: "Travel mode for getDirections action. Defaults to DRIVING.",
       },
       markerTitle: {
         type: "string",
@@ -182,8 +164,7 @@ Available actions:
       },
       markerLabel: {
         type: "string",
-        description:
-          "Single character label displayed on the marker when using addMarker.",
+        description: "Single character label displayed on the marker when using addMarker.",
       },
       groupId: {
         type: "string",

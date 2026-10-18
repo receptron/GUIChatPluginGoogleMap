@@ -28,12 +28,7 @@ export type {
   DirectionStep,
 } from "../core/types";
 
-export {
-  TOOL_NAME,
-  TOOL_DEFINITION,
-  executeMap,
-  pluginCore,
-} from "../core/plugin";
+export { TOOL_NAME, TOOL_DEFINITION, executeMap, pluginCore } from "../core/plugin";
 
 export { samples } from "../core/samples";
 
