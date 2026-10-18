@@ -16,20 +16,11 @@
               />
               <span class="text-sm text-gray-700">Mock Mode (no API key needed)</span>
             </label>
-            <span v-if="hasApiKey && !useMockMode" class="text-xs text-green-600">
-              API Key loaded from .env
-            </span>
+            <span v-if="hasApiKey && !useMockMode" class="text-xs text-green-600"> API Key loaded from .env </span>
           </div>
-          <button
-            @click="clearAll"
-            class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-          >
-            Clear Chat
-          </button>
+          <button @click="clearAll" class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Clear Chat</button>
         </div>
-        <p v-if="!hasApiKey && !useMockMode" class="mt-2 text-xs text-amber-600">
-          No API key found. Create a .env file with VITE_OPENAI_API_KEY=your-key
-        </p>
+        <p v-if="!hasApiKey && !useMockMode" class="mt-2 text-xs text-amber-600">No API key found. Create a .env file with VITE_OPENAI_API_KEY=your-key</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -49,18 +40,12 @@
               :key="index"
               :class="[
                 'p-3 rounded-lg max-w-[85%]',
-                message.role === 'user'
-                  ? 'bg-indigo-100 ml-auto text-right'
-                  : message.role === 'assistant'
-                    ? 'bg-gray-100'
-                    : 'bg-amber-50 text-xs font-mono',
+                message.role === 'user' ? 'bg-indigo-100 ml-auto text-right' : message.role === 'assistant' ? 'bg-gray-100' : 'bg-amber-50 text-xs font-mono',
               ]"
             >
               <div class="text-xs text-gray-500 mb-1">{{ message.role }}</div>
               <div class="text-sm whitespace-pre-wrap">{{ message.content }}</div>
-              <div v-if="message.toolCalls" class="mt-2 text-xs text-indigo-600">
-                Tool call: {{ message.toolCalls.map((tc) => tc.name).join(", ") }}
-              </div>
+              <div v-if="message.toolCalls" class="mt-2 text-xs text-indigo-600">Tool call: {{ message.toolCalls.map((tc) => tc.name).join(", ") }}</div>
             </div>
 
             <div v-if="isLoading" class="text-center text-gray-500 text-sm">
@@ -116,12 +101,7 @@
                Try the "Trip A ①→④" samples in order: markers + a
                route accumulate here on ONE map. "Trip B" makes a
                separate card. -->
-          <div
-            v-for="group in groups"
-            :key="group.groupId"
-            v-show="ViewComponent"
-            class="bg-white rounded-lg shadow-md overflow-hidden"
-          >
+          <div v-for="group in groups" :key="group.groupId" v-show="ViewComponent" class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="p-3 border-b border-gray-200 flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-700">Map: {{ group.groupId }}</h2>
               <span class="text-xs text-gray-500">{{ group.results.length }} operation(s)</span>
@@ -172,9 +152,7 @@
               <span class="text-lg font-semibold text-gray-700">Result Data (Debug)</span>
             </summary>
             <div class="p-4">
-              <pre class="bg-gray-100 p-3 rounded overflow-x-auto text-xs">{{
-                JSON.stringify(result, null, 2)
-              }}</pre>
+              <pre class="bg-gray-100 p-3 rounded overflow-x-auto text-xs">{{ JSON.stringify(result, null, 2) }}</pre>
             </div>
           </details>
         </div>
@@ -214,18 +192,7 @@ const routeToGroup = (toolResult: ToolResult): void => {
 const googleMapKey = import.meta.env.VITE_GOOGLE_MAP_KEY || "";
 
 // Chat composable
-const {
-  messages,
-  isLoading,
-  error,
-  result,
-  useMockMode,
-  hasApiKey,
-  sendMessage,
-  clearMessages,
-  toggleMockMode,
-  executePlugin,
-} = useChat({
+const { messages, isLoading, error, result, useMockMode, hasApiKey, sendMessage, clearMessages, toggleMockMode, executePlugin } = useChat({
   plugin: currentPlugin,
 });
 
@@ -247,7 +214,7 @@ watch(
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-  }
+  },
 );
 
 // Actions

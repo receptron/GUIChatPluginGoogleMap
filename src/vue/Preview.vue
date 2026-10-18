@@ -50,10 +50,8 @@ const summary = computed(() => {
     case "findPlaces":
       return data.searchQuery || data.placeType || "Search";
     case "getDirections": {
-      const origin =
-        typeof data.origin === "string" ? data.origin : "Start";
-      const dest =
-        typeof data.destination === "string" ? data.destination : "End";
+      const origin = typeof data.origin === "string" ? data.origin : "Start";
+      const dest = typeof data.destination === "string" ? data.destination : "End";
       return `${origin} → ${dest}`;
     }
     default:

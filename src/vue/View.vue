@@ -10,11 +10,7 @@
     <div class="flex-1 min-h-0 flex">
       <!-- Map container -->
       <div class="flex-1 relative">
-        <div
-          v-if="googleMapKey"
-          ref="mapContainer"
-          class="w-full h-full"
-        ></div>
+        <div v-if="googleMapKey" ref="mapContainer" class="w-full h-full"></div>
         <div v-else class="w-full h-full flex items-center justify-center bg-gray-100">
           <div class="text-center p-8">
             <div class="text-gray-500 mb-4">Google Maps API key not configured</div>
@@ -30,26 +26,17 @@
         </div>
 
         <!-- Loading overlay -->
-        <div
-          v-if="isLoading"
-          class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center"
-        >
+        <div v-if="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
           <div class="text-gray-600">Loading...</div>
         </div>
 
         <!-- Error overlay -->
-        <div
-          v-if="errorMessage"
-          class="absolute bottom-4 left-4 right-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded"
-        >
+        <div v-if="errorMessage" class="absolute bottom-4 left-4 right-4 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded">
           {{ errorMessage }}
         </div>
 
         <!-- Zoom controls -->
-        <div
-          v-if="googleMapKey && map"
-          class="absolute top-4 right-4 flex flex-col gap-1"
-        >
+        <div v-if="googleMapKey && map" class="absolute top-4 right-4 flex flex-col gap-1">
           <button
             @click="zoomIn"
             class="w-8 h-8 bg-white border border-gray-300 rounded shadow text-lg font-bold text-gray-700 hover:bg-gray-100 flex items-center justify-center"
@@ -68,10 +55,7 @@
       </div>
 
       <!-- Side panel for search results or directions -->
-      <div
-        v-if="showSidePanel"
-        class="w-80 border-l border-gray-200 overflow-y-auto"
-      >
+      <div v-if="showSidePanel" class="w-80 border-l border-gray-200 overflow-y-auto">
         <!-- Place search results -->
         <div v-if="places.length > 0" class="p-4">
           <h3 class="font-semibold text-gray-800 mb-3">Search Results</h3>
@@ -88,16 +72,10 @@
                 <span class="text-yellow-500 mr-1">★</span>
                 <span class="text-sm text-gray-600">
                   {{ place.rating.toFixed(1) }}
-                  <span v-if="place.userRatingsTotal" class="text-gray-400">
-                    ({{ place.userRatingsTotal }})
-                  </span>
+                  <span v-if="place.userRatingsTotal" class="text-gray-400"> ({{ place.userRatingsTotal }}) </span>
                 </span>
               </div>
-              <div
-                v-if="place.openNow !== undefined"
-                :class="place.openNow ? 'text-green-600' : 'text-red-600'"
-                class="text-sm mt-1"
-              >
+              <div v-if="place.openNow !== undefined" :class="place.openNow ? 'text-green-600' : 'text-red-600'" class="text-sm mt-1">
                 {{ place.openNow ? "Open now" : "Closed" }}
               </div>
             </div>
@@ -123,31 +101,19 @@
               @click="selectStep(step)"
             >
               <div class="text-gray-800">{{ stripHtml(step.instruction) }}</div>
-              <div class="text-gray-500 mt-1">
-                {{ step.distance }} · {{ step.duration }}
-              </div>
+              <div class="text-gray-500 mt-1">{{ step.distance }} · {{ step.duration }}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import type { ToolResult } from "gui-chat-protocol";
-import type {
-  MapToolData,
-  MapJsonData,
-  MarkerData,
-  PlaceResult,
-  DirectionRoute,
-  DirectionStep,
-  LatLng,
-  TravelMode,
-} from "../core/types";
+import type { MapToolData, MapJsonData, MarkerData, PlaceResult, DirectionRoute, DirectionStep, LatLng, TravelMode } from "../core/types";
 
 const props = defineProps<{
   selectedResult: ToolResult<MapToolData> | null;
@@ -241,9 +207,7 @@ const fallbackUrl = computed(() => {
 });
 
 // Helper functions
-const formatLocation = (
-  location: string | LatLng | undefined
-): string => {
+const formatLocation = (location: string | LatLng | undefined): string => {
   if (!location) return "";
   if (typeof location === "string") return location;
   return `${location.lat}, ${location.lng}`;
@@ -271,11 +235,7 @@ const getMarkersData = (): MarkerData[] => {
   return result;
 };
 
-const emitResult = (
-  success: boolean,
-  error?: string,
-  additionalData?: Partial<MapJsonData>
-) => {
+const emitResult = (success: boolean, error?: string, additionalData?: Partial<MapJsonData>) => {
   if (!props.onUpdateResult) return;
 
   const data = latestData.value;
@@ -300,28 +260,18 @@ const emitResult = (
 const loadGoogleMapsScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if already fully loaded with importLibrary available
-    if (
-      typeof google !== "undefined" &&
-      google.maps &&
-      typeof google.maps.importLibrary === "function"
-    ) {
+    if (typeof google !== "undefined" && google.maps && typeof google.maps.importLibrary === "function") {
       resolve();
       return;
     }
 
-    const existingScript = document.querySelector(
-      'script[src*="maps.googleapis.com"]'
-    );
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
 
     const TIMEOUT_MS = 10000;
     const POLL_INTERVAL_MS = 50;
 
     const waitForImportLibrary = (startTime: number) => {
-      if (
-        typeof google !== "undefined" &&
-        google.maps &&
-        typeof google.maps.importLibrary === "function"
-      ) {
+      if (typeof google !== "undefined" && google.maps && typeof google.maps.importLibrary === "function") {
         resolve();
       } else if (Date.now() - startTime > TIMEOUT_MS) {
         reject(new Error("Timeout waiting for Google Maps to load"));
@@ -355,12 +305,8 @@ const initializeMap = async () => {
     await loadGoogleMapsScript();
 
     // Load libraries dynamically
-    const markerLib = (await google.maps.importLibrary(
-      "marker"
-    )) as google.maps.MarkerLibrary;
-    const placesLib = (await google.maps.importLibrary(
-      "places"
-    )) as google.maps.PlacesLibrary;
+    const markerLib = (await google.maps.importLibrary("marker")) as google.maps.MarkerLibrary;
+    const placesLib = (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
     AdvancedMarkerElement = markerLib.AdvancedMarkerElement;
     Place = placesLib.Place;
 
@@ -402,15 +348,12 @@ const initializeMap = async () => {
       await handleAction(props.selectedResult.data);
     }
   } catch (err) {
-    errorMessage.value =
-      err instanceof Error ? err.message : "Failed to initialize map";
+    errorMessage.value = err instanceof Error ? err.message : "Failed to initialize map";
   }
 };
 
 // Action handlers
-const geocodeLocation = async (
-  location: string | LatLng
-): Promise<LatLng | null> => {
+const geocodeLocation = async (location: string | LatLng): Promise<LatLng | null> => {
   if (typeof location !== "string") {
     return location;
   }
@@ -418,26 +361,18 @@ const geocodeLocation = async (
   if (!geocoder.value) return null;
 
   return new Promise((resolve) => {
-    geocoder.value!.geocode(
-      { address: location },
-      (results, status) => {
-        if (status === "OK" && results && results[0]) {
-          const loc = results[0].geometry.location;
-          resolve({ lat: loc.lat(), lng: loc.lng() });
-        } else {
-          resolve(null);
-        }
+    geocoder.value!.geocode({ address: location }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        const loc = results[0].geometry.location;
+        resolve({ lat: loc.lat(), lng: loc.lng() });
+      } else {
+        resolve(null);
       }
-    );
+    });
   });
 };
 
-const addMapMarker = (
-  position: LatLng,
-  id: string,
-  title?: string,
-  label?: string
-): google.maps.marker.AdvancedMarkerElement => {
+const addMapMarker = (position: LatLng, id: string, title?: string, label?: string): google.maps.marker.AdvancedMarkerElement => {
   // Create label element if needed
   let content: HTMLElement | undefined;
   if (label) {
@@ -488,11 +423,7 @@ const handleAction = async (data: MapToolData) => {
 
         if (data.action === "showLocation") {
           const markerId = `location_${Date.now()}`;
-          addMapMarker(
-            coords,
-            markerId,
-            typeof data.location === "string" ? data.location : undefined
-          );
+          addMapMarker(coords, markerId, typeof data.location === "string" ? data.location : undefined);
         }
         emitResult(true);
         break;
@@ -541,17 +472,12 @@ const handleAction = async (data: MapToolData) => {
         if (!data.origin || !data.destination) {
           throw new Error("Origin and destination are required");
         }
-        await getDirections(
-          data.origin as string,
-          data.destination as string,
-          data.travelMode || "DRIVING"
-        );
+        await getDirections(data.origin as string, data.destination as string, data.travelMode || "DRIVING");
         break;
       }
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "An error occurred";
+    const message = err instanceof Error ? err.message : "An error occurred";
     errorMessage.value = message;
     emitResult(false, message);
   } finally {
@@ -585,9 +511,7 @@ const searchPlaces = async (query?: string, placeType?: string) => {
 
     if (searchResults && searchResults.length > 0) {
       // Clear previous place markers (collect IDs first to avoid mutation during iteration)
-      const placeMarkerIds = [...markers.value.keys()].filter((id) =>
-        id.startsWith("place_")
-      );
+      const placeMarkerIds = [...markers.value.keys()].filter((id) => id.startsWith("place_"));
       placeMarkerIds.forEach((id) => {
         const marker = markers.value.get(id);
         if (marker) {
@@ -596,36 +520,27 @@ const searchPlaces = async (query?: string, placeType?: string) => {
         }
       });
 
-      const placeResults: PlaceResult[] = searchResults.map(
-        (place: google.maps.places.Place, index: number) => {
-          const location = place.location;
-          const coords: LatLng = location
-            ? { lat: location.lat(), lng: location.lng() }
-            : { lat: 0, lng: 0 };
+      const placeResults: PlaceResult[] = searchResults.map((place: google.maps.places.Place, index: number) => {
+        const location = place.location;
+        const coords: LatLng = location ? { lat: location.lat(), lng: location.lng() } : { lat: 0, lng: 0 };
 
-          // Add marker for each place
-          if (location) {
-            addMapMarker(
-              coords,
-              `place_${place.id}`,
-              place.displayName || undefined,
-              String(index + 1)
-            );
-          }
-
-          return {
-            placeId: place.id || "",
-            name: place.displayName || "",
-            address: place.formattedAddress || "",
-            location: coords,
-            rating: place.rating ?? undefined,
-            userRatingsTotal: place.userRatingCount ?? undefined,
-            types: place.types,
-            // Note: isOpen() requires async call, omitting for now
-            openNow: undefined,
-          };
+        // Add marker for each place
+        if (location) {
+          addMapMarker(coords, `place_${place.id}`, place.displayName || undefined, String(index + 1));
         }
-      );
+
+        return {
+          placeId: place.id || "",
+          name: place.displayName || "",
+          address: place.formattedAddress || "",
+          location: coords,
+          rating: place.rating ?? undefined,
+          userRatingsTotal: place.userRatingCount ?? undefined,
+          types: place.types,
+          // Note: isOpen() requires async call, omitting for now
+          openNow: undefined,
+        };
+      });
 
       places.value = placeResults;
       route.value = null;
@@ -648,8 +563,7 @@ const searchPlaces = async (query?: string, placeType?: string) => {
   }
 };
 
-const toLatLng = (point?: google.maps.LatLng): LatLng | undefined =>
-  point ? { lat: point.lat(), lng: point.lng() } : undefined;
+const toLatLng = (point?: google.maps.LatLng): LatLng | undefined => (point ? { lat: point.lat(), lng: point.lng() } : undefined);
 
 const mapDirectionStep = (step: google.maps.DirectionsStep): DirectionStep => ({
   instruction: step.instructions || "",
@@ -660,9 +574,7 @@ const mapDirectionStep = (step: google.maps.DirectionsStep): DirectionStep => ({
   endLocation: toLatLng(step.end_location),
 });
 
-const buildRouteInfo = (
-  result: google.maps.DirectionsResult
-): DirectionRoute | null => {
+const buildRouteInfo = (result: google.maps.DirectionsResult): DirectionRoute | null => {
   const firstRoute = result.routes[0];
   const leg = firstRoute?.legs[0];
   if (!firstRoute || !leg) return null;
@@ -696,11 +608,7 @@ const directionsErrorMessage = (err: unknown, travelMode: TravelMode): string =>
   return err instanceof Error ? err.message : "Could not find directions";
 };
 
-const getDirections = async (
-  origin: string,
-  destination: string,
-  travelMode: TravelMode
-) => {
+const getDirections = async (origin: string, destination: string, travelMode: TravelMode) => {
   if (!directionsService.value || !directionsRenderer.value) return;
 
   const request: google.maps.DirectionsRequest = {
@@ -768,7 +676,7 @@ watch(
       lastProcessedData = dataKey;
       await handleAction(newData);
     }
-  }
+  },
 );
 
 // ── Group replay mode ──────────────────────────────────────────
@@ -802,7 +710,7 @@ watch(
   () => (props.results ?? []).map((r) => JSON.stringify(r.data)).join(""),
   async () => {
     if (isGroupMode() && map.value) await syncGroupSequence();
-  }
+  },
 );
 
 // Lifecycle

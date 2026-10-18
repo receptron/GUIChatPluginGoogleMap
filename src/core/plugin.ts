@@ -1,8 +1,4 @@
-import type {
-  ToolContext,
-  ToolResult,
-  ToolPluginCore,
-} from "gui-chat-protocol";
+import type { ToolContext, ToolResult, ToolPluginCore } from "gui-chat-protocol";
 import type { MapToolData, MapArgs, MapAction, MapJsonData } from "./types";
 import { TOOL_NAME, TOOL_DEFINITION } from "./definition";
 
@@ -22,19 +18,14 @@ const hasLocationParams = (args: MapArgs): boolean => {
   return !!(args.location || (args.lat !== undefined && args.lng !== undefined));
 };
 
-const getLocationFromArgs = (
-  args: MapArgs
-): string | { lat: number; lng: number } | undefined => {
+const getLocationFromArgs = (args: MapArgs): string | { lat: number; lng: number } | undefined => {
   if (args.lat !== undefined && args.lng !== undefined) {
     return { lat: args.lat, lng: args.lng };
   }
   return args.location;
 };
 
-export const executeMapControl = async (
-  __context: ToolContext,
-  args: MapArgs
-): Promise<ToolResult<MapToolData, MapJsonData>> => {
+export const executeMapControl = async (__context: ToolContext, args: MapArgs): Promise<ToolResult<MapToolData, MapJsonData>> => {
   const action: MapAction = args.action || DEFAULT_ACTION;
   // Threaded onto every returned data shape so the host can group
   // results onto one map. Undefined stays undefined (ungrouped /
@@ -46,9 +37,7 @@ export const executeMapControl = async (
     case "setCenter":
     case "addMarker": {
       if (!hasLocationParams(args)) {
-        throw new Error(
-          `${action} requires either 'location' or both 'lat' and 'lng' parameters`
-        );
+        throw new Error(`${action} requires either 'location' or both 'lat' and 'lng' parameters`);
       }
       const location = getLocationFromArgs(args);
       const data: MapToolData = { action, location, groupId };
@@ -56,17 +45,13 @@ export const executeMapControl = async (
       if (action === "addMarker") {
         data.marker = {
           id: generateMarkerId(),
-          position:
-            typeof location === "string"
-              ? { lat: 0, lng: 0 }
-              : (location as { lat: number; lng: number }),
+          position: typeof location === "string" ? { lat: 0, lng: 0 } : (location as { lat: number; lng: number }),
           title: args.markerTitle,
           label: args.markerLabel?.charAt(0),
         };
       }
 
-      const locationStr =
-        typeof location === "string" ? location : `${location?.lat}, ${location?.lng}`;
+      const locationStr = typeof location === "string" ? location : `${location?.lat}, ${location?.lng}`;
       const messages: Record<string, string> = {
         showLocation: `Showing ${locationStr} on the map`,
         setCenter: `Centering map on ${locationStr}`,
@@ -99,13 +84,9 @@ export const executeMapControl = async (
 
     case "findPlaces": {
       if (!args.searchQuery && !args.placeType) {
-        throw new Error(
-          "findPlaces requires either 'searchQuery' or 'placeType' parameter"
-        );
+        throw new Error("findPlaces requires either 'searchQuery' or 'placeType' parameter");
       }
-      const searchDesc = args.searchQuery
-        ? `"${args.searchQuery}"`
-        : args.placeType;
+      const searchDesc = args.searchQuery ? `"${args.searchQuery}"` : args.placeType;
       return {
         message: `Searching for ${searchDesc} nearby`,
         data: {
@@ -119,9 +100,7 @@ export const executeMapControl = async (
 
     case "getDirections": {
       if (!args.origin || !args.destination) {
-        throw new Error(
-          "getDirections requires both 'origin' and 'destination' parameters"
-        );
+        throw new Error("getDirections requires both 'origin' and 'destination' parameters");
       }
       const travelMode = args.travelMode || DEFAULT_TRAVEL_MODE;
       return {

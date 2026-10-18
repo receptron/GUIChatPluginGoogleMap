@@ -1,12 +1,5 @@
 // Map action types
-export type MapAction =
-  | "showLocation"
-  | "setCenter"
-  | "setZoom"
-  | "addMarker"
-  | "clearMarkers"
-  | "findPlaces"
-  | "getDirections";
+export type MapAction = "showLocation" | "setCenter" | "setZoom" | "addMarker" | "clearMarkers" | "findPlaces" | "getDirections";
 
 // Google Places API supported place types
 export type PlaceType =
